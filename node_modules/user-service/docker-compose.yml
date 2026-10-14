@@ -1,0 +1,38 @@
+services:
+  app-database:
+    image: mongo
+    restart: unless-stopped
+    env_file: ./.env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: $MONGODB_USER
+      MONGO_INITDB_ROOT_PASSWORD: $MONGODB_PASSWORD
+    ports:
+      - "$MONGODB_LOCAL_PORT:$MONGODB_DOCKER_PORT"
+    volumes:
+      - db:/data/db
+
+  node-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nodejs
+    container_name: nodejs
+    depends_on:
+      - app-database
+    restart: on-failure
+    env_file: .env
+    ports:
+      - "$NODE_LOCAL_PORT:$API_PORT"
+    environment:
+      DB_HOST: $DB_HOST
+      DB_NAME: $DB_NAME
+      DB_USER: $DB_USER
+      DB_PASSWORD: $DB_PASSWORD
+      DB_PORT: $DB_PORT
+    volumes:
+      - .:/home/node/app
+      - node_modules:/home/node/app/node_modules
+
+volumes:
+  db:
+  node_modules:
