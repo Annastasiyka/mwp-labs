@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # 1. Брокер повідомлень RabbitMQ
+  app-queue-message:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_DEFAULT_VHOST=/
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - mwp_shared_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. База даних для User Service
+  user-database:
+    image: mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: dbuser
+      MONGO_INITDB_ROOT_PASSWORD: dbpwd
+    ports:
+      - "27019:27017"
+    volumes:
+      - user_db:/data/db
+    networks:
+      - mwp_shared_network
+
+  # 3. User Service
+  user-app:
+    build:
+      context: ./backend/user-service
+      dockerfile: Dockerfile
+    container_name: user_nodejs
+    depends_on:
+      - user-database
+      - app-queue-message
+    restart: on-failure
+    env_file: ./backend/user-service/.env
+    ports:
+      - "8090:8800"
+    
+    networks:
+      - mwp_shared_network
+
+  # 4. База даних для Business Service
+  business-database:
+    image: mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: movieuser
+      MONGO_INITDB_ROOT_PASSWORD: moviepass
+    ports:
+      - "27020:27017"
+    volumes:
+      - business_db:/data/db
+    networks:
+      - mwp_shared_network
+
+  # 5. Business Service
+  business-app:
+    build:
+      context: ./backend/business-service
+      dockerfile: Dockerfile
+    container_name: business_nodejs
+    depends_on:
+      - business-database
+      - app-queue-message
+    restart: on-failure
+    env_file: ./backend/business-service/.env
+    ports:
+      - "8081:8801"
+    
+    networks:
+      - mwp_shared_network
+
+volumes:
+  rabbitmq_data:
+    driver: local
+  user_db:
+  business_db:
+
+networks:
+  mwp_shared_network:
+    name: mwp_shared_network

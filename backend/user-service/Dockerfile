@@ -1,10 +1,7 @@
-ARG NODE_DOCKER_PORT
 FROM node:20-alpine
-RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 WORKDIR /home/node/app
 COPY package*.json ./
 RUN npm install
-USER node
-COPY --chown=node:node . .
-EXPOSE $NODE_DOCKER_PORT
+COPY . .
+EXPOSE 8800
 CMD [ "node", "server.js" ]
