@@ -6,8 +6,12 @@ const router = express.Router();
 const movieController = require('../controllers/movieController');
 const authenticateToken = require('../middleware/auth');
 
-router.post('/movies', movieController.createMovie);
-router.get('/movies/search', authenticateToken, movieController.searchMovies);
+// Отримання списку та додавання фільмів
+router.post('/movies', authenticateToken, movieController.createMovie);
+router.get('/movies', authenticateToken, movieController.searchMovies); // 👈 Для GET http://localhost:8081/movies
+router.get('/movies/search', authenticateToken, movieController.searchMovies); // 👈 Для пошуку з фільтрами
+
+// Історія переглядів та RabbitMQ
 router.post('/movies/watch', authenticateToken, movieController.watchMovie);
 router.get('/movies/history', authenticateToken, movieController.getHistory);
 router.post('/movies/notify', authenticateToken, movieController.notifyUser);

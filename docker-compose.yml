@@ -50,7 +50,6 @@ services:
     env_file: ./backend/user-service/.env
     ports:
       - "8090:8800"
-    
     networks:
       - mwp_shared_network
 
@@ -81,16 +80,35 @@ services:
     env_file: ./backend/business-service/.env
     ports:
       - "8081:8801"
-    
     networks:
       - mwp_shared_network
 
+  # 6. API Gateway (Тепер правильно знаходиться всередині services)
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: api_gateway
+    ports:
+      - "8080:8800"
+    environment:
+      - API_PORT=8800
+      - USER_SERVICE_API_URL=http://user_nodejs:8800
+      - BUSINESS_SERVICE_API_URL=http://business_nodejs:8801
+    depends_on:
+      - user-app
+      - business-app
+    networks:
+      - mwp_shared_network
+
+# Оголошення спільних томів
 volumes:
   rabbitmq_data:
     driver: local
   user_db:
   business_db:
 
+# Оголошення спільної мережі
 networks:
   mwp_shared_network:
-    name: mwp_shared_network
+    driver: bridge
