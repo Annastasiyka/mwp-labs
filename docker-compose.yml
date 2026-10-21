@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   # 1. Брокер повідомлень RabbitMQ
@@ -83,7 +83,7 @@ services:
     networks:
       - mwp_shared_network
 
-  # 6. API Gateway (Тепер правильно знаходиться всередині services)
+  # 6. API Gateway
   api-gateway:
     build:
       context: ./backend/api-gateway
@@ -98,6 +98,20 @@ services:
     depends_on:
       - user-app
       - business-app
+    networks:
+      - mwp_shared_network
+
+  # 7. Frontend Web UI (React + Nginx)
+  frontend-app:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend_react
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    restart: on-failure
     networks:
       - mwp_shared_network
 
